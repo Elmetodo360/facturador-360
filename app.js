@@ -36,13 +36,20 @@ function fechaES(iso) {
 function socActual() {
   return CFG.sociedades[$("sociedad").value];
 }
-function formatNumero(n) {
-  const tipo = $("tipo").value;
+function serieActual() {
   const soc = socActual();
-  const serie = tipo === "rect" ? soc.serieRect : soc.serie;
-  const pre = serie.prefijo ? serie.prefijo + "-" : "";
-  return `${pre}${String(n).padStart(2, "0")}/${CFG.anioFiscal}`;
+  return $("tipo").value === "rect" ? soc.serieRect : soc.serie;
 }
+function formatNumero(n) {
+  const pad = typeof n === "number" ? String(n).padStart(2, "0") : n;
+  return `${serieActual().prefijo}${pad}/${CFG.anioFiscal}`;
+}
+
+const MESES = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
+  "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
+const TRIMESTRES = ["Primer trimestre", "Segundo trimestre", "Tercer trimestre", "Cuarto trimestre"];
+const mesDe = (iso) => MESES[Number(iso.slice(5, 7)) - 1];
+const trimestreDe = (iso) => TRIMESTRES[Math.floor((Number(iso.slice(5, 7)) - 1) / 3)];
 
 /* ---------- inicialización de selectores ---------- */
 function initSociedades() {
@@ -309,6 +316,18 @@ async function llamarBackend(payload) {
   return data;
 }
 
+/* carga los clientes frecuentes desde el backend (no van en el repo público) */
+async function cargarClientes() {
+  if (!CFG.webhookUrl) return;
+  try {
+    const r = await llamarBackend({ action: "clientes" });
+    if (r && r.ok && Array.isArray(r.clientes)) {
+      CFG.clientesFrecuentes = r.clientes;
+      initClientesFrecuentes();
+    }
+  } catch (_) { /* silencioso: si falla, cliente manual */ }
+}
+
 /* ---------- acciones ---------- */
 function setStatus(msg, cls = "info") {
   const el = $("statusMsg");
@@ -343,24 +362,32 @@ async function onEmitir() {
   }
 
   try {
-    setStatus("Reservando número…", "info");
-    const r1 = await llamarBackend({ action: "emitir", ...f });
-    if (!r1.ok || !r1.numero) throw new Error(r1.error || "No se recibió número");
-    const numeroStr = r1.numero;
+    setStatus("Asignando número y registrando…", "info");
+    const r = await llamarBackend({
+      action: "emitir",
+      sociedad: f.sociedad,
+      tipo: f.tipo,
+      prefijo: serieActual().prefijo,
+      anio: CFG.anioFiscal,
+      fecha: fechaES(f.fecha),
+      trimestre: trimestreDe(f.fecha),
+      mes: mesDe(f.fecha),
+      base: f.base,
+      ivaDecimal: f.iva / 100,
+      ivaImporte: f.ivaImporte,
+      total: f.total,
+      cliente: f.cliente.nombre,
+      cif: f.cliente.cif
+    });
+    if (!r.ok || !r.numero) throw new Error(r.error || "No se recibió número");
+    const numeroStr = r.numero;
     $("numeroPreview").textContent = numeroStr;
 
-    setStatus(`Número ${numeroStr} asignado. Generando PDF…`, "info");
     const doc = generarPDF(f, numeroStr, { borrador: false });
-    const filename = nombreArchivo(f.sociedad, numeroStr);
-    const pdfBase64 = doc.output("datauristring").split(",")[1];
-
-    setStatus("Archivando y registrando…", "info");
-    await llamarBackend({ action: "adjuntar_pdf", sociedad: f.sociedad, numero: numeroStr, filename, pdfBase64 });
-
-    doc.save(filename);
-    setStatus(`✅ Factura ${numeroStr} emitida, archivada y registrada en contabilidad.`, "ok");
+    doc.save(nombreArchivo(f.sociedad, numeroStr));
+    setStatus(`✅ Factura ${numeroStr} emitida y registrada. PDF descargado — guárdalo en Invoice Out (archivado automático en la próxima fase).`, "ok");
   } catch (e) {
-    setStatus("❌ Error: " + e.message + ". No se ha emitido. Reintenta o avisa.", "err");
+    setStatus("❌ Error: " + e.message + ". No se ha emitido. Reintenta.", "err");
   } finally {
     $("btnEmitir").disabled = false;
   }
@@ -372,6 +399,7 @@ function init() {
   initSociedades();
   initIva();
   initClientesFrecuentes();
+  cargarClientes();
   pintarEmisor();
   $("fecha").value = hoyISO();
   $("vencimiento").value = hoyISO(7);

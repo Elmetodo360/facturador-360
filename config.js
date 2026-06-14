@@ -9,9 +9,9 @@
    ===================================================================== */
 
 const FACTURADOR_CONFIG = {
-  // --- Backend (se rellena en 1b, tras crear el escenario de Make) ---
-  webhookUrl: "",                 // p.ej. "https://hook.eu2.make.com/xxxxxxxx"
-  token: "",                      // secreto compartido que Make validará
+  // --- Backend (Make) ---
+  webhookUrl: "https://hook.eu2.make.com/4pqzk7eahsh6nedpks6xodaoi7gph494",
+  token: "f360_Kx7mPq2Rv9Lw",     // secreto compartido que Make valida
 
   anioFiscal: 2026,
 
@@ -40,7 +40,7 @@ const FACTURADOR_CONFIG = {
       email: "",
       iban: "ES95 0049 3548 1021 1404 6649",
       logo: "",                     // pendiente
-      serie: { prefijo: "IGI" },    // "IGI-NN/2026"
+      serie: { prefijo: "IGI-" },   // "IGI-NN/2026"
       serieRect: { prefijo: "IGI-R" },
       ivaPorDefecto: 21
     },
@@ -54,7 +54,7 @@ const FACTURADOR_CONFIG = {
       email: "",
       iban: "",
       logo: "",                     // pendiente (Fase 2)
-      serie: { prefijo: "G360" },   // "G360-NN/2026"
+      serie: { prefijo: "G360-" },  // "G360-NN/2026"
       serieRect: { prefijo: "G360-R" },
       ivaPorDefecto: 21
     }
