@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Facturador 360</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <span class="brand-dot"></span>
+      <h1>Facturador&nbsp;360</h1>
+    </div>
+    <div class="sociedad-picker">
+      <label for="sociedad">Sociedad emisora</label>
+      <select id="sociedad"></select>
+    </div>
+  </header>
+
+  <main class="layout">
+    <!-- ============ FORMULARIO ============ -->
+    <section class="panel form-panel">
+
+      <div class="card">
+        <h2>Datos de la factura</h2>
+        <div class="grid-3">
+          <div class="field">
+            <label for="tipo">Tipo</label>
+            <select id="tipo">
+              <option value="normal">Factura</option>
+              <option value="rect">Rectificativa</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="fecha">Fecha</label>
+            <input type="date" id="fecha" />
+          </div>
+          <div class="field">
+            <label for="vencimiento">Vencimiento</label>
+            <input type="date" id="vencimiento" />
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>Cliente</h2>
+        <div class="field">
+          <label for="clienteFrecuente">Cliente frecuente (autorelleno)</label>
+          <select id="clienteFrecuente">
+            <option value="">— Nuevo cliente —</option>
+          </select>
+        </div>
+        <div class="grid-2">
+          <div class="field">
+            <label for="cliNombre">Nombre / Razón social</label>
+            <input type="text" id="cliNombre" placeholder="Nombre de la empresa" />
+          </div>
+          <div class="field">
+            <label for="cliCif">CIF / NIF</label>
+            <input type="text" id="cliCif" placeholder="B12345678" />
+          </div>
+          <div class="field">
+            <label for="cliDireccion">Dirección</label>
+            <input type="text" id="cliDireccion" placeholder="Calle, número" />
+          </div>
+          <div class="field">
+            <label for="cliCpCiudad">CP y ciudad</label>
+            <input type="text" id="cliCpCiudad" placeholder="28001 Madrid" />
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-head">
+          <h2>Líneas</h2>
+          <button type="button" id="addLinea" class="btn-ghost">+ Añadir línea</button>
+        </div>
+        <table class="lineas">
+          <thead>
+            <tr>
+              <th class="col-desc">Descripción</th>
+              <th class="col-num">Cant.</th>
+              <th class="col-num">Precio/ud</th>
+              <th class="col-num">Total</th>
+              <th class="col-x"></th>
+            </tr>
+          </thead>
+          <tbody id="lineasBody"></tbody>
+        </table>
+
+        <div class="iva-row">
+          <label for="iva">IVA aplicado</label>
+          <select id="iva"></select>
+        </div>
+
+        <div class="totales">
+          <div><span>Base imponible</span><strong id="tBase">0,00 €</strong></div>
+          <div><span>IVA (<em id="tIvaPct">21</em>%)</span><strong id="tIva">0,00 €</strong></div>
+          <div class="total-final"><span>TOTAL</span><strong id="tTotal">0,00 €</strong></div>
+        </div>
+      </div>
+
+      <div class="actions">
+        <button type="button" id="btnPreview" class="btn-secondary">Previsualizar PDF</button>
+        <button type="button" id="btnEmitir" class="btn-primary">Emitir factura</button>
+      </div>
+      <p id="statusMsg" class="status"></p>
+    </section>
+
+    <!-- ============ RESUMEN LATERAL ============ -->
+    <aside class="panel side-panel">
+      <div class="card emisor-card">
+        <h3>Emisor</h3>
+        <p id="emisorNombre" class="emisor-nombre"></p>
+        <p id="emisorDatos" class="emisor-datos"></p>
+      </div>
+      <div class="card numero-card">
+        <h3>Próximo número</h3>
+        <p id="numeroPreview" class="numero-preview">—</p>
+        <p class="numero-nota">El número definitivo lo asigna el sistema al emitir (sin huecos, sin colisiones).</p>
+      </div>
+      <div class="card verifactu-card">
+        <h3>Verifactu</h3>
+        <p class="verifactu-nota">Listo para activar cuando aplique (registro inalterable, huella y QR ya previstos). Hoy no obligatorio para sociedades hasta 1-ene-2027.</p>
+      </div>
+    </aside>
+  </main>
+
+  <!-- jsPDF + autotable desde CDN -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+  <script src="config.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
