@@ -384,8 +384,22 @@ async function onEmitir() {
     $("numeroPreview").textContent = numeroStr;
 
     const doc = generarPDF(f, numeroStr, { borrador: false });
-    doc.save(nombreArchivo(f.sociedad, numeroStr));
-    setStatus(`✅ Factura ${numeroStr} emitida y registrada. PDF descargado — guárdalo en Invoice Out (archivado automático en la próxima fase).`, "ok");
+    const filename = nombreArchivo(f.sociedad, numeroStr);
+    doc.save(filename); // copia local de respaldo
+
+    // archivado automático en OneDrive (Invoice Out), best-effort
+    let archivado = false;
+    try {
+      const pdfBase64 = doc.output("datauristring").split(",")[1];
+      const ra = await llamarBackend({ action: "adjuntar_pdf", filename, pdfBase64 });
+      archivado = !!(ra && ra.ok);
+    } catch (_) { /* el registro ya está; el PDF queda descargado */ }
+
+    setStatus(
+      `✅ Factura ${numeroStr} emitida y registrada.` +
+      (archivado ? " PDF archivado en Invoice Out." : " PDF descargado (archívalo a mano; el auto-archivo no respondió)."),
+      "ok"
+    );
   } catch (e) {
     setStatus("❌ Error: " + e.message + ". No se ha emitido. Reintenta.", "err");
   } finally {
