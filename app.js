@@ -391,7 +391,10 @@ async function onEmitir() {
     let archivado = false;
     try {
       const pdfBase64 = doc.output("datauristring").split(",")[1];
-      const ra = await llamarBackend({ action: "adjuntar_pdf", filename, pdfBase64 });
+      // la carpeta va SIEMPRE explícita: sin ella el backend archiva en EM360
+      // y el PDF de otra sociedad acabaría en la carpeta equivocada
+      const folder = FACTURADOR_CONFIG.sociedades[f.sociedad].carpetaPdf;
+      const ra = await llamarBackend({ action: "adjuntar_pdf", filename, pdfBase64, folder });
       archivado = !!(ra && ra.ok);
     } catch (_) { /* el registro ya está; el PDF queda descargado */ }
 

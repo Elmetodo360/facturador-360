@@ -28,21 +28,30 @@ const FACTURADOR_CONFIG = {
       logo: "assets/logo-em360.png",
       serie: { prefijo: "" },       // EM360: "NN/2026" (continúa lo existente)
       serieRect: { prefijo: "R" },  // rectificativas: "R-NN/2026"
-      ivaPorDefecto: 21
+      ivaPorDefecto: 21,
+      // carpeta de OneDrive donde el backend archiva el PDF. SIN ella, el
+      // backend usa la de EM360 por defecto y el PDF acabaría en la sociedad
+      // equivocada. Cada sociedad DEBE tener la suya.
+      carpetaPdf: "/01_Sociedades/El Metodo 360 SL/Contabilidad/2026/01_Emitidas"
     },
 
+    // Datos tomados de la TARJETA DE IDENTIFICACIÓN FISCAL de la AEAT
+    // ("Documentacion Oficial/CIF Definitivo IGI.pdf") y del certificado de
+    // titularidad del Santander. NO tocar sin contrastar contra esos documentos.
     IGI: {
-      activa: false,                // se activa en Fase 2
-      nombre: "IGI - Instituto Gastronómico S.L.",
+      activa: true,                 // ACTIVADA 2026-07-15: el Facturador 360 es la
+                                    // única vía de emisión para EM360 e IGI (orden de Chema)
+      nombre: "INSTITUTO DE GASTRONOMIA IBEROAMERICANO SL",
       cif: "B23959166",
-      direccion: "",                // ⚠️ pendiente: dirección fiscal IGI (obligatoria para emitir)
-      cpCiudad: "",
-      email: "",
+      direccion: "Calle Manipa, núm. 74 - Planta 1, Puerta E",
+      cpCiudad: "28027 Madrid",
+      email: "facturacion@casaamparo1948.com",
       iban: "ES95 0049 3548 1021 1404 6649",
-      logo: "",                     // pendiente
+      logo: "",                     // sin logo: sale el nombre en texto
       serie: { prefijo: "IGI-" },   // "IGI-NN/2026"
       serieRect: { prefijo: "IGI-R" },
-      ivaPorDefecto: 21
+      ivaPorDefecto: 10,            // hostelería
+      carpetaPdf: "/01_Sociedades/IGI - Instituto Gastronomico SL/Contabilidad/2026/01_Emitidas"
     },
 
     GASTRO360: {
