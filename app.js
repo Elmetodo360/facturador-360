@@ -301,6 +301,12 @@ function nombreArchivo(soc, numeroStr) {
   return `Factura_${soc}_${numeroStr.replace(/\//g, "-")}.pdf`;
 }
 
+/* Concepto para el libro: las descripciones de las líneas, en una sola cadena.
+   El PDF ya detalla las líneas; el libro solo guarda este resumen. */
+function conceptoDe(f) {
+  return f.lineas.map((l) => l.descripcion).filter(Boolean).join(" · ").slice(0, 500);
+}
+
 /* ---------- backend (Make) ---------- */
 async function llamarBackend(payload) {
   if (!CFG.webhookUrl) throw new Error("BACKEND_NO_CONFIGURADO");
@@ -377,7 +383,11 @@ async function onEmitir() {
       ivaImporte: f.ivaImporte,
       total: f.total,
       cliente: f.cliente.nombre,
-      cif: f.cliente.cif
+      cif: f.cliente.cif,
+      // el libro (Contable 360) los asienta; sin esto entran a NULL
+      concepto: conceptoDe(f),
+      direccion: [f.cliente.direccion, f.cliente.cpCiudad].filter(Boolean).join(", "),
+      vencimiento: fechaES(f.vencimiento)
     });
     if (!r.ok || !r.numero) throw new Error(r.error || "No se recibió número");
     const numeroStr = r.numero;
