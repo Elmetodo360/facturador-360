@@ -47,7 +47,10 @@ const FACTURADOR_CONFIG = {
       cpCiudad: "28027 Madrid",
       email: "facturacion@casaamparo1948.com",
       iban: "ES95 0049 3548 1021 1404 6649",
-      logo: "",                     // sin logo: sale el nombre en texto
+      // IGI solo explota Casa Amparo, así que sus facturas van con el logo de
+      // Casa Amparo 1948 (decisión de Chema). Tomado del logo en producción de
+      // casaamparo1948.com; los del Drive son borradores de IA, no el oficial.
+      logo: "assets/logo-casa-amparo.png",
       serie: { prefijo: "IGI-" },   // "IGI-NN/2026"
       serieRect: { prefijo: "IGI-R" },
       ivaPorDefecto: 10,            // hostelería
