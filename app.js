@@ -307,13 +307,36 @@ function conceptoDe(f) {
   return f.lineas.map((l) => l.descripcion).filter(Boolean).join(" · ").slice(0, 500);
 }
 
+/* ---------- clave de emisión ----------
+   No vive en el repo (es público): con ella se emiten facturas y se asientan en
+   el libro. Se pide una vez por navegador y queda guardada. Copia en
+   SecureHeaven → "Facturador 360 — clave de emisión". */
+const TOKEN_KEY = "f360_clave";
+
+function getToken({ pedirSiFalta = true } = {}) {
+  let t = localStorage.getItem(TOKEN_KEY);
+  if (!t && pedirSiFalta) {
+    t = (window.prompt(
+      "Clave del Facturador 360\n(la tienes en SecureHeaven; se guarda en este navegador y no vuelve a pedirse)"
+    ) || "").trim();
+    if (t) localStorage.setItem(TOKEN_KEY, t);
+  }
+  return t || null;
+}
+
+function olvidarToken() {
+  localStorage.removeItem(TOKEN_KEY);
+}
+
 /* ---------- backend (Make) ---------- */
-async function llamarBackend(payload) {
+async function llamarBackend(payload, { token = null } = {}) {
   if (!CFG.webhookUrl) throw new Error("BACKEND_NO_CONFIGURADO");
+  const tok = token || getToken();
+  if (!tok) throw new Error("SIN_CLAVE");
   const res = await fetch(CFG.webhookUrl, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ token: CFG.token, ...payload })
+    body: JSON.stringify({ token: tok, ...payload })
   });
   const txt = await res.text();
   let data;
@@ -322,7 +345,10 @@ async function llamarBackend(payload) {
   return data;
 }
 
-/* carga los clientes frecuentes desde el backend (no van en el repo público) */
+/* Carga los clientes frecuentes desde el backend (no van en el repo público).
+   Hace de comprobación de la clave al arrancar: si el backend no la reconoce,
+   el router de Make no encaja ninguna ruta y no devuelve la lista. Así el aviso
+   sale al abrir y no al intentar emitir. */
 async function cargarClientes() {
   if (!CFG.webhookUrl) return;
   try {
@@ -330,8 +356,16 @@ async function cargarClientes() {
     if (r && r.ok && Array.isArray(r.clientes)) {
       CFG.clientesFrecuentes = r.clientes;
       initClientesFrecuentes();
+      return;
     }
-  } catch (_) { /* silencioso: si falla, cliente manual */ }
+    olvidarToken();
+    setStatus("Clave incorrecta: el backend no la reconoce. Recarga la página e introdúcela de nuevo (está en SecureHeaven).", "err");
+  } catch (e) {
+    if (e.message === "SIN_CLAVE") {
+      setStatus("Sin la clave del Facturador no se puede emitir. Recarga la página para introducirla.", "err");
+    }
+    /* otros fallos (red): silencioso, se trabaja con cliente manual */
+  }
 }
 
 /* ---------- acciones ---------- */
@@ -414,7 +448,11 @@ async function onEmitir() {
       "ok"
     );
   } catch (e) {
-    setStatus("❌ Error: " + e.message + ". No se ha emitido. Reintenta.", "err");
+    if (e.message === "SIN_CLAVE") {
+      setStatus("❌ Falta la clave del Facturador (está en SecureHeaven). Recarga la página para introducirla. No se ha emitido.", "err");
+    } else {
+      setStatus("❌ Error: " + e.message + ". No se ha emitido. Reintenta.", "err");
+    }
   } finally {
     $("btnEmitir").disabled = false;
   }

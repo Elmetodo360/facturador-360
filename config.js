@@ -11,7 +11,10 @@
 const FACTURADOR_CONFIG = {
   // --- Backend (Make) ---
   webhookUrl: "https://hook.eu2.make.com/4pqzk7eahsh6nedpks6xodaoi7gph494",
-  token: "f360_Kx7mPq2Rv9Lw",     // secreto compartido que Make valida
+  // El token NO va aquí: este repo es público y con esa clave se pueden emitir
+  // facturas y asentarlas en el libro. La app la pide la primera vez y la guarda
+  // en el navegador. Está en SecureHeaven → "Facturador 360 — clave de emisión".
+  token: null,
 
   anioFiscal: 2026,
 
