@@ -431,22 +431,34 @@ async function onEmitir() {
     const filename = nombreArchivo(f.sociedad, numeroStr);
     doc.save(filename); // copia local de respaldo
 
-    // archivado automático en OneDrive (Invoice Out), best-effort
+    // Archivado automático en OneDrive (Invoice Out).
+    // Por aquí se perdió el PDF de la 31/2026: antes fallaba EN SILENCIO y salía
+    // un ✅ verde igual. Ahora reintenta y, si no lo consigue, AVISA EN ROJO.
     let archivado = false;
-    try {
-      const pdfBase64 = doc.output("datauristring").split(",")[1];
-      // la carpeta va SIEMPRE explícita: sin ella el backend archiva en EM360
-      // y el PDF de otra sociedad acabaría en la carpeta equivocada
-      const folder = FACTURADOR_CONFIG.sociedades[f.sociedad].carpetaPdf;
-      const ra = await llamarBackend({ action: "adjuntar_pdf", filename, pdfBase64, folder });
-      archivado = !!(ra && ra.ok);
-    } catch (_) { /* el registro ya está; el PDF queda descargado */ }
+    const pdfBase64 = doc.output("datauristring").split(",")[1];
+    // la carpeta va SIEMPRE explícita: sin ella el backend archiva en EM360
+    // y el PDF de otra sociedad acabaría en la carpeta equivocada
+    const folder = FACTURADOR_CONFIG.sociedades[f.sociedad].carpetaPdf;
+    for (let intento = 1; intento <= 3 && !archivado; intento++) {
+      try {
+        const ra = await llamarBackend({ action: "adjuntar_pdf", filename, pdfBase64, folder });
+        archivado = !!(ra && ra.ok);
+      } catch (_) { /* reintenta */ }
+      if (!archivado && intento < 3) await new Promise((s) => setTimeout(s, 1200));
+    }
 
-    setStatus(
-      `✅ Factura ${numeroStr} emitida y registrada.` +
-      (archivado ? " PDF archivado en Invoice Out." : " PDF descargado (archívalo a mano; el auto-archivo no respondió)."),
-      "ok"
-    );
+    if (archivado) {
+      setStatus(`✅ Factura ${numeroStr} emitida, registrada y archivada en Invoice Out.`, "ok");
+    } else {
+      // La factura SÍ está emitida y en el libro; solo falló el archivado.
+      // Lo marcamos en rojo para que nadie lo pase por alto: ese PDF hay que
+      // subirlo a mano a OneDrive (ya está descargado en este equipo).
+      setStatus(
+        `⚠️ Factura ${numeroStr} emitida y registrada, PERO el PDF NO se archivó en OneDrive ` +
+        `tras 3 intentos. Está descargado como "${filename}": súbelo a mano a Invoice Out.`,
+        "err"
+      );
+    }
   } catch (e) {
     if (e.message === "SIN_CLAVE") {
       setStatus("❌ Falta la clave del Facturador (está en SecureHeaven). Recarga la página para introducirla. No se ha emitido.", "err");
