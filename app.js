@@ -28,6 +28,20 @@ function hoyISO(offsetDias = 0) {
   d.setDate(d.getDate() + offsetDias);
   return d.toISOString().slice(0, 10);
 }
+function masDias(iso, dias) {
+  if (!iso) return "";
+  const [y, m, d] = iso.split("-").map(Number);
+  const f = new Date(y, m - 1, d + dias);
+  const p = (n) => String(n).padStart(2, "0");
+  return `${f.getFullYear()}-${p(f.getMonth() + 1)}-${p(f.getDate())}`;
+}
+/* Regla 10-sep-2026: la factura vence al dia siguiente de su fecha. Se emite siempre
+   despues del dia que toca facturar, asi que el plazo por defecto no da margen. */
+let vencimientoTocado = false;
+function sincronizarVencimiento() {
+  if (vencimientoTocado) return;
+  $("vencimiento").value = masDias($("fecha").value, 1);
+}
 function fechaES(iso) {
   if (!iso) return "";
   const [y, m, d] = iso.split("-");
@@ -479,9 +493,11 @@ function init() {
   cargarClientes();
   pintarEmisor();
   $("fecha").value = hoyISO();
-  $("vencimiento").value = hoyISO(7);
+  sincronizarVencimiento();
   nuevaLinea();
 
+  $("fecha").addEventListener("change", sincronizarVencimiento);
+  $("vencimiento").addEventListener("input", () => { vencimientoTocado = true; });
   $("sociedad").addEventListener("change", () => { initIva(); pintarEmisor(); });
   $("tipo").addEventListener("change", pintarEmisor);
   $("iva").addEventListener("change", recalcular);
